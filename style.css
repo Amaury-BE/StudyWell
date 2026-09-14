@@ -1,63 +1,136 @@
 body {
-    font-family: Arial, sans-serif;
-    background: #f5f7fa;
     margin: 0;
-    padding: 20px;
+    padding: 40px;
+    background: #f5f7fa;
+
+    font-family:
+        Segoe UI,
+        Arial,
+        sans-serif;
 }
 
-.hidden {
-    display: none;
-}
-
-.card {
-    width: 300px;
-    margin: 100px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    box-sizing: border-box;
-}
-
-button {
-    padding: 10px 15px;
-    margin-top: 10px;
-    cursor: pointer;
+h1,
+h2 {
+    margin-top: 0;
 }
 
 header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    margin-bottom: 25px;
 }
 
-.wallet,
-.shop {
+.card {
     background: white;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 10px;
+
+    border-radius: 12px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            0,
+            0,
+            0,
+            0.1
+        );
+}
+
+.balance {
+
+    font-size: 32px;
+
+    font-weight: bold;
+
+    color: #2e8b57;
+
+    margin-bottom: 15px;
+}
+
+.wallet-controls {
+
+    display: flex;
+
+    gap: 10px;
+}
+
+input {
+
+    padding: 10px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+}
+
+button {
+
+    padding:
+        10px
+        16px;
+
+    border: none;
+
+    border-radius: 6px;
+
+    background: #0078d7;
+
+    color: white;
+
+    cursor: pointer;
+}
+
+button:hover {
+
+    background: #005fa3;
+}
+
+.logout-btn {
+
+    background: #c0392b;
+}
+
+.logout-btn:hover {
+
+    background: #992d22;
 }
 
 .shop-item {
+
     border: 1px solid #ddd;
-    padding: 15px;
-    margin-top: 10px;
+
     border-radius: 8px;
+
+    padding: 15px;
+
+    margin-bottom: 15px;
 }
 
-.shop-item.unlocked {
-    background: #d4ffd4;
+.shop-item h3 {
+
+    margin-top: 0;
 }
 
-a {
-    display: block;
-    margin-top: 10px;
+#secretContent {
+
+    white-space: pre-wrap;
+
+    background: #f8f8f8;
+
+    padding: 15px;
+
+    border-radius: 8px;
+
+    min-height: 120px;
 }
-``

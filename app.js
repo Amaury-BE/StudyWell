@@ -1,177 +1,330 @@
-// ----------------------------------
+import { createClient }
+from 'https://esm.sh/@supabase/supabase-js'
+
+const supabase = createClient(
+    'https://yrdsjrnqnfbryeazostu.supabase.co',
+    'sb_publishable_K3loapGQUqwFG80SdFYEpQ_Fo02nzGR'
+);
+
+// ---------------------
 // LOGIN
-// ----------------------------------
+// ---------------------
 
-const USERNAME = "student";
-const PASSWORD = "studywell";
+async function login() {
 
-// Predefined shop items
-const shopItems = [
-    {
-        id: 1,
-        name: "Mathematics Course",
-        price: 50,
-        link: "https://example.com/math"
-    },
-    {
-        id: 2,
-        name: "Physics Notes",
-        price: 100,
-        link: "https://example.com/physics"
-    },
-    {
-        id: 3,
-        name: "Premium Exercises",
-        price: 150,
-        link: "https://example.com/exercises"
+    const email =
+        document.getElementById('email').value;
+
+    const password =
+        document.getElementById('password').value;
+
+    const { error } =
+        await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+    if (error) {
+        alert(error.message);
+        return;
     }
-];
 
-let balance = Number(localStorage.getItem("balance")) || 0;
-let unlockedItems =
-    JSON.parse(localStorage.getItem("unlockedItems")) || [];
-
-window.onload = () => {
-
-    if (localStorage.getItem("loggedIn") === "true") {
-        showApp();
-    }
-};
-
-function login() {
-
-    const user = document.getElementById("username").value;
-    const pass = document.getElementById("password").value;
-
-    if (user === USERNAME && pass === PASSWORD) {
-
-        localStorage.setItem("loggedIn", "true");
-
-        showApp();
-
-    } else {
-
-        document.getElementById("loginError").innerText =
-            "Invalid credentials";
-    }
+    await startApp();
 }
 
-function logout() {
+window.login = login;
 
-    localStorage.removeItem("loggedIn");
+
+// ---------------------
+// APP START
+// ---------------------
+
+async function startApp() {
+
+    document.getElementById(
+        'login'
+    ).style.display = 'none';
+
+    document.getElementById(
+        'app'
+    ).style.display = 'block';
+
+    await loadBalance();
+    await loadShop();
+}
+
+window.addEventListener(
+    'DOMContentLoaded',
+    async () => {
+
+        const {
+            data: { session }
+        } =
+            await supabase.auth.getSession();
+
+        if (session) {
+            startApp();
+        }
+    }
+);
+
+
+// ---------------------
+// LOAD BALANCE
+// ---------------------
+
+async function loadBalance() {
+
+    const {
+        data: { user }
+    } =
+        await supabase.auth.getUser();
+
+    const { data, error } =
+        await supabase
+            .from('profiles')
+            .select('balance')
+            .eq('id', user.id)
+            .single();
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    document.getElementById(
+        'balance'
+    ).innerText =
+        `${data.balance} coins`;
+}
+
+
+// ---------------------
+// CHANGE BALANCE
+// ---------------------
+
+async function changeBalance() {
+
+    const amount =
+        parseInt(
+            document.getElementById(
+                'balanceChange'
+            ).value
+        );
+
+    if (isNaN(amount)) {
+        alert('Invalid number');
+        return;
+    }
+
+    const { error } =
+        await supabase.rpc(
+            'adjust_balance',
+            {
+                delta: amount
+            }
+        );
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    document.getElementById(
+        'balanceChange'
+    ).value = '';
+
+    await loadBalance();
+}
+
+window.changeBalance =
+    changeBalance;
+
+
+// ---------------------
+// LOAD SHOP
+// ---------------------
+
+async function loadShop() {
+
+    const shopDiv =
+        document.getElementById(
+            'shop'
+        );
+
+    shopDiv.innerHTML = '';
+
+    const {
+        data: { user }
+    } =
+        await supabase.auth.getUser();
+
+    const {
+        data: items,
+        error
+    } =
+        await supabase
+            .from('shop_items')
+            .select('*')
+            .eq('active', true)
+            .order('price');
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    const {
+        data: purchases
+    } =
+        await supabase
+            .from('purchases')
+            .select('item_id')
+            .eq('user_id', user.id);
+
+    const purchasedIds =
+        purchases.map(
+            p => p.item_id
+        );
+
+    items.forEach(item => {
+
+        const div =
+            document.createElement(
+                'div'
+            );
+
+        div.className =
+            'shop-item';
+
+        let buttonHTML;
+
+        if (
+            purchasedIds.includes(
+                item.id
+            )
+        ) {
+
+            buttonHTML =
+                `
+                <button
+                    onclick="viewSecret(${item.id})">
+                    View
+                </button>
+            `;
+
+        } else {
+
+            buttonHTML =
+                `
+                <button
+                    onclick="buyItem(${item.id})">
+                    Unlock
+                </button>
+            `;
+        }
+
+        div.innerHTML =
+            `
+            <h3>${item.name}</h3>
+
+            <p>
+                ${item.description || ''}
+            </p>
+
+            <p>
+                Price:
+                ${item.price}
+                coins
+            </p>
+
+            ${buttonHTML}
+            `;
+
+        shopDiv.appendChild(
+            div
+        );
+    });
+}
+
+
+// ---------------------
+// BUY ITEM
+// ---------------------
+
+async function buyItem(itemId) {
+
+    const {
+        data,
+        error
+    } =
+        await supabase.rpc(
+            'buy_item',
+            {
+                p_item_id: itemId
+            }
+        );
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    document.getElementById(
+        'secretContent'
+    ).innerText =
+        data;
+
+    await loadBalance();
+    await loadShop();
+}
+
+window.buyItem =
+    buyItem;
+
+
+// ---------------------
+// VIEW PURCHASED SECRET
+// ---------------------
+
+async function viewSecret(itemId) {
+
+    const {
+        data,
+        error
+    } =
+        await supabase.rpc(
+            'get_secret',
+            {
+                p_item_id: itemId
+            }
+        );
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    document.getElementById(
+        'secretContent'
+    ).innerText =
+        data;
+}
+
+window.viewSecret =
+    viewSecret;
+
+
+// ---------------------
+// LOGOUT
+// ---------------------
+
+async function logout() {
+
+    await supabase.auth.signOut();
 
     location.reload();
 }
 
-function showApp() {
-
-    document.getElementById("loginPage").classList.add("hidden");
-    document.getElementById("appPage").classList.remove("hidden");
-
-    render();
-}
-
-// ----------------------------------
-// WALLET
-// ----------------------------------
-
-function addMoney() {
-
-    const amount =
-        Number(document.getElementById("amountInput").value);
-
-    if (amount <= 0) return;
-
-    balance += amount;
-
-    saveData();
-
-    render();
-}
-
-// ----------------------------------
-// SHOP
-// ----------------------------------
-
-function unlockItem(itemId) {
-
-    const item =
-        shopItems.find(i => i.id === itemId);
-
-    if (!item) return;
-
-    if (unlockedItems.includes(itemId)) {
-        return;
-    }
-
-    if (balance < item.price) {
-
-        alert("Not enough coins");
-
-        return;
-    }
-
-    balance -= item.price;
-
-    unlockedItems.push(itemId);
-
-    saveData();
-
-    render();
-}
-
-function render() {
-
-    document.getElementById("balance").innerText =
-        balance;
-
-    const container =
-        document.getElementById("shopContainer");
-
-    container.innerHTML = "";
-
-    shopItems.forEach(item => {
-
-        const unlocked =
-            unlockedItems.includes(item.id);
-
-        const div = document.createElement("div");
-
-        div.className =
-            unlocked ? "shop-item unlocked" : "shop-item";
-
-        div.innerHTML = `
-
-            <h3>${item.name}</h3>
-
-            <p>Price: ${item.price} coins</p>
-
-            ${
-                unlocked
-                ? `
-                    <strong>Unlocked ✓</strong>
-                    ${item.link}
-                        Open Content
-                    </a>
-                `
-                : `
-                    <button onclick="unlockItem(${item.id})">
-                        Unlock
-                    </button>
-                `
-            }
-        `;
-
-        container.appendChild(div);
-    });
-}
-
-function saveData() {
-
-    localStorage.setItem("balance", balance);
-
-    localStorage.setItem(
-        "unlockedItems",
-        JSON.stringify(unlockedItems)
-    );
-}
+window.logout =
+    logout;

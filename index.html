@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyWell</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="loginPage" class="card">
+        <h1>StudyWell</h1>
+
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+
+        <button onclick="login()">Login</button>
+
+        <p id="loginError"></p>
+    </div>
+
+    <div id="appPage" class="hidden">
+
+        <header>
+            <h1>StudyWell</h1>
+            <button onclick="logout()">Logout</button>
+        </header>
+
+        <section class="wallet">
+            <h2>Virtual Wallet</h2>
+            <p>Balance: <span id="balance">0</span> coins</p>
+
+            <input type="number" id="amountInput" placeholder="Amount">
+            <button onclick="addMoney()">Add Money</button>
+        </section>
+
+        <section class="shop">
+            <h2>Virtual Shop</h2>
+
+            <div id="shopContainer"></div>
+        </section>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+</html>

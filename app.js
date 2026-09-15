@@ -483,7 +483,7 @@ async function loadShop() {
             .select('id, name, description, price')
             .eq('active', true)
             .or(`user_id.is.null,user_id.eq.${user.id}`)
-            .order('price')
+            .order('price'),
         supabase
             .from('purchases')
             .select('item_id')

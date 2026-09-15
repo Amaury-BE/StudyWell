@@ -595,3 +595,11 @@ function setButtonLoading(button, loading, label) {
     button.disabled = loading;
     button.textContent = label;
 }
+
+function updateStudyTime(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    document.getElementById('study-time').textContent =
+        `${hours}h ${minutes}m`;
+}

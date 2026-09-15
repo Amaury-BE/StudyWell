@@ -471,10 +471,11 @@ async function loadShop() {
 
     const [itemsResult, purchasesResult] = await Promise.all([
         supabase
-            .from('shop_items')
+    	    .from('shop_items')
             .select('id, name, description, price')
             .eq('active', true)
-            .order('price'),
+            .or(`user_id.is.null,user_id.eq.${user.id}`)
+            .order('price')
         supabase
             .from('purchases')
             .select('item_id')

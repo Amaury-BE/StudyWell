@@ -54,29 +54,37 @@
 
         </header>
 
+   <!-- TIMER -->
 
-	    <!-- TIMER -->
-	
-		<button onclick="startTimer()">
-		   Start
-		</button>
-	
-		<button onclick="pauseTimer()">
-	 	   Pause
-		</button>
-	
-		<button onclick="resetTimer()">
-	  	  Reset
-		</button>
-	
-		<button onclick="collectPoints()">
-		    Collect Coins
-		</button>
+	   <div class="card">
 
-		<div id="timer">
-		    00:00:00
-		</div>
+    <h2>Study Timer</h2>
 
+    <div
+        id="timer"
+        class="balance">
+
+        00:00:00
+
+    </div>
+
+    <button onclick="startTimer()">
+        Start
+    </button>
+
+    <button onclick="pauseTimer()">
+        Pause
+    </button>
+
+    <button onclick="resetTimer()">
+        Reset
+    </button>
+
+    <button onclick="collectPoints()">
+        Collect Coins
+    </button>
+
+</div>
 
         <!-- WALLET -->
 
@@ -89,22 +97,6 @@
                 class="balance">
 
                 0 coins
-
-            </div>
-
-            <div class="wallet-controls">
-
-                <input
-                    id="balanceChange"
-                    type="number"
-                    placeholder="+50 or -20">
-
-                <button
-                    onclick="changeBalance()">
-
-                    Update Wallet
-
-                </button>
 
             </div>
 

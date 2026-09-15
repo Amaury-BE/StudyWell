@@ -1,22 +1,209 @@
 import { createClient }
-from 'https://esm.sh/@supabase/supabase-js'
+    from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabase = createClient(
     'https://yrdsjrnqnfbryeazostu.supabase.co',
     'sb_publishable_K3loapGQUqwFG80SdFYEpQ_Fo02nzGR'
 );
 
-// ---------------------
-// LOGIN
-// ---------------------
 
-async function login() {
+// =========================================================
+// CONFIGURATION
+// =========================================================
+
+const MAX_TIMER_SECONDS = 12 * 60 * 60;
+
+
+// =========================================================
+// PAGE ELEMENTS
+// =========================================================
+
+const loginSection =
+    document.getElementById('login');
+
+const appSection =
+    document.getElementById('app');
+
+const loginForm =
+    document.getElementById('loginForm');
+
+const emailInput =
+    document.getElementById('email');
+
+const passwordInput =
+    document.getElementById('password');
+
+const loginMessage =
+    document.getElementById('loginMessage');
+
+const logoutButton =
+    document.getElementById('logoutButton');
+
+const balanceElement =
+    document.getElementById('balance');
+
+const timerElement =
+    document.getElementById('timer');
+
+const timerStatusElement =
+    document.getElementById('timerStatus');
+
+const startTimerButton =
+    document.getElementById('startTimerButton');
+
+const pauseTimerButton =
+    document.getElementById('pauseTimerButton');
+
+const resetTimerButton =
+    document.getElementById('resetTimerButton');
+
+const collectPointsButton =
+    document.getElementById('collectPointsButton');
+
+const shopElement =
+    document.getElementById('shop');
+
+const secretContentElement =
+    document.getElementById('secretContent');
+
+const notificationElement =
+    document.getElementById('notification');
+
+
+// =========================================================
+// TIMER STATE
+// =========================================================
+
+let timerState = createEmptyTimerState();
+
+let timerDisplayInterval = null;
+
+let timerCancellationInProgress = false;
+
+
+function createEmptyTimerState() {
+    return {
+        running: false,
+        started_at: null,
+        accumulated_seconds: 0
+    };
+}
+
+
+// =========================================================
+// INITIALISATION
+// =========================================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    initialiseApplication
+);
+
+
+async function initialiseApplication() {
+    registerEventListeners();
+
+    const {
+        data: { session },
+        error
+    } = await supabase.auth.getSession();
+
+    if (error) {
+        console.error(
+            'Could not retrieve session:',
+            error
+        );
+    }
+
+    if (session) {
+        await startApp();
+    } else {
+        showLogin();
+    }
+}
+
+
+function registerEventListeners() {
+    loginForm.addEventListener(
+        'submit',
+        login
+    );
+
+    logoutButton.addEventListener(
+        'click',
+        logout
+    );
+
+    startTimerButton.addEventListener(
+        'click',
+        startTimer
+    );
+
+    pauseTimerButton.addEventListener(
+        'click',
+        pauseTimer
+    );
+
+    resetTimerButton.addEventListener(
+        'click',
+        requestTimerReset
+    );
+
+    collectPointsButton.addEventListener(
+        'click',
+        collectPoints
+    );
+}
+
+
+supabase.auth.onAuthStateChange(
+    (event, session) => {
+        if (
+            event === 'SIGNED_OUT' ||
+            !session
+        ) {
+            stopTimerDisplay();
+            showLogin();
+        }
+    }
+);
+
+
+// =========================================================
+// LOGIN
+// =========================================================
+
+async function login(event) {
+    event.preventDefault();
+
+    clearNotification();
+    setLoginMessage('');
 
     const email =
-        document.getElementById('email').value;
+        emailInput.value.trim();
 
     const password =
-        document.getElementById('password').value;
+        passwordInput.value;
+
+    if (!email || !password) {
+        setLoginMessage(
+            'Enter your email address and password.',
+            true
+        );
+
+        return;
+    }
+
+    const loginButton =
+        loginForm.querySelector(
+            'button[type="submit"]'
+        );
+
+    setButtonLoading(
+        loginButton,
+        true,
+        'Logging in...'
+    );
 
     const { error } =
         await supabase.auth.signInWithPassword({
@@ -24,61 +211,125 @@ async function login() {
             password
         });
 
+    setButtonLoading(
+        loginButton,
+        false,
+        'Log in'
+    );
+
     if (error) {
-        alert(error.message);
+        setLoginMessage(
+            error.message,
+            true
+        );
+
         return;
     }
+
+    passwordInput.value = '';
 
     await startApp();
 }
 
-window.login = login;
 
+function setLoginMessage(
+    message,
+    isError = false
+) {
+    loginMessage.textContent = message;
 
-// ---------------------
-// APP START
-// ---------------------
-
-async function startApp() {
-
-    document.getElementById(
-        'login'
-    ).style.display = 'none';
-
-    document.getElementById(
-        'app'
-    ).style.display = 'block';
-
-    await loadBalance();
-    await loadShop();
+    loginMessage.classList.toggle(
+        'error-message',
+        isError
+    );
 }
 
-window.addEventListener(
-    'DOMContentLoaded',
-    async () => {
 
-        const {
-            data: { session }
-        } =
-            await supabase.auth.getSession();
+// =========================================================
+// LOGOUT
+// =========================================================
 
-        if (session) {
-            startApp();
-        }
+async function logout() {
+    stopTimerDisplay();
+
+    const { error } =
+        await supabase.auth.signOut();
+
+    if (error) {
+        showNotification(
+            error.message,
+            'error'
+        );
+
+        return;
     }
-);
+
+    showLogin();
+}
 
 
-// ---------------------
-// LOAD BALANCE
-// ---------------------
+// =========================================================
+// APPLICATION
+// =========================================================
+
+async function startApp() {
+    loginSection.hidden = true;
+    appSection.hidden = false;
+
+    clearNotification();
+
+    await Promise.all([
+        loadBalance(),
+        loadShop(),
+        loadTimer()
+    ]);
+}
+
+
+function showLogin() {
+    loginSection.hidden = false;
+    appSection.hidden = true;
+
+    timerState =
+        createEmptyTimerState();
+
+    stopTimerDisplay();
+    renderTimer();
+}
+
+
+// =========================================================
+// USER
+// =========================================================
+
+async function getCurrentUser() {
+    const {
+        data: { user },
+        error
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+        stopTimerDisplay();
+        showLogin();
+
+        return null;
+    }
+
+    return user;
+}
+
+
+// =========================================================
+// BALANCE
+// =========================================================
 
 async function loadBalance() {
+    const user =
+        await getCurrentUser();
 
-    const {
-        data: { user }
-    } =
-        await supabase.auth.getUser();
+    if (!user) {
+        return;
+    }
 
     const { data, error } =
         await supabase
@@ -88,243 +339,735 @@ async function loadBalance() {
             .single();
 
     if (error) {
-        console.error(error);
+        console.error(
+            'Could not load balance:',
+            error
+        );
+
+        balanceElement.textContent =
+            'Balance unavailable';
+
         return;
     }
 
-    document.getElementById(
-        'balance'
-    ).innerText =
+    balanceElement.textContent =
         `${data.balance} coins`;
 }
 
 
-// ---------------------
-// CHANGE BALANCE
-// ---------------------
+// =========================================================
+// LOAD TIMER
+// =========================================================
 
-async function changeBalance() {
+async function loadTimer() {
+    const user =
+        await getCurrentUser();
 
-    const amount =
-        parseInt(
-            document.getElementById(
-                'balanceChange'
-            ).value
-        );
-
-    if (isNaN(amount)) {
-        alert('Invalid number');
+    if (!user) {
         return;
     }
 
-    const { error } =
-        await supabase.rpc(
-            'adjust_balance',
-            {
-                delta: amount
-            }
-        );
+    const { data, error } =
+        await supabase
+            .from('study_timers')
+            .select(`
+                user_id,
+                running,
+                started_at,
+                accumulated_seconds
+            `)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
     if (error) {
-        alert(error.message);
+        console.error(
+            'Could not load timer:',
+            error
+        );
+
+        timerStatusElement.textContent =
+            'Timer unavailable';
+
         return;
     }
 
-    document.getElementById(
-        'balanceChange'
-    ).value = '';
+    timerState =
+        normaliseTimerState(data);
 
-    await loadBalance();
+    const totalSeconds =
+        getDisplayedSeconds();
+
+    if (
+        totalSeconds >=
+        MAX_TIMER_SECONDS
+    ) {
+        await cancelExpiredTimer();
+        return;
+    }
+
+    configureTimerDisplay();
+    renderTimer();
 }
 
-window.changeBalance =
-    changeBalance;
 
-
-// ---------------------
-// LOAD SHOP
-// ---------------------
-
-async function loadShop() {
-
-    const shopDiv =
-        document.getElementById(
-            'shop'
-        );
-
-    shopDiv.innerHTML = '';
-
-    const {
-        data: { user }
-    } =
-        await supabase.auth.getUser();
-
-    const {
-        data: items,
-        error
-    } =
-        await supabase
-            .from('shop_items')
-            .select('*')
-            .eq('active', true)
-            .order('price');
-
-    if (error) {
-        console.error(error);
-        return;
+function normaliseTimerState(data) {
+    if (!data) {
+        return createEmptyTimerState();
     }
 
-    const {
-        data: purchases
-    } =
-        await supabase
-            .from('purchases')
-            .select('item_id')
-            .eq('user_id', user.id);
+    return {
+        running:
+            Boolean(data.running),
 
-    const purchasedIds =
-        purchases.map(
-            p => p.item_id
-        );
+        started_at:
+            data.started_at ?? null,
 
-    items.forEach(item => {
-
-        const div =
-            document.createElement(
-                'div'
-            );
-
-        div.className =
-            'shop-item';
-
-        let buttonHTML;
-
-        if (
-            purchasedIds.includes(
-                item.id
+        accumulated_seconds:
+            Math.max(
+                0,
+                Number(
+                    data.accumulated_seconds
+                ) || 0
             )
-        ) {
-
-            buttonHTML =
-                `
-                <button
-                    onclick="viewSecret(${item.id})">
-                    View
-                </button>
-            `;
-
-        } else {
-
-            buttonHTML =
-                `
-                <button
-                    onclick="buyItem(${item.id})">
-                    Unlock
-                </button>
-            `;
-        }
-
-        div.innerHTML =
-            `
-            <h3>${item.name}</h3>
-
-            <p>
-                ${item.description || ''}
-            </p>
-
-            <p>
-                Price:
-                ${item.price}
-                coins
-            </p>
-
-            ${buttonHTML}
-            `;
-
-        shopDiv.appendChild(
-            div
-        );
-    });
+    };
 }
 
 
-// ---------------------
-// BUY ITEM
-// ---------------------
+function normaliseRpcTimer(data) {
+    const timerData =
+        Array.isArray(data)
+            ? data[0]
+            : data;
 
-async function buyItem(itemId) {
+    return normaliseTimerState(
+        timerData
+    );
+}
 
-    const {
-        data,
-        error
-    } =
+
+// =========================================================
+// START TIMER
+// =========================================================
+
+async function startTimer() {
+    setTimerControlsBusy(true);
+
+    timerStatusElement.textContent =
+        timerState.accumulated_seconds > 0
+            ? 'Resuming timer...'
+            : 'Starting timer...';
+
+    const { data, error } =
         await supabase.rpc(
-            'buy_item',
-            {
-                p_item_id: itemId
-            }
+            'start_study_timer'
         );
 
+    setTimerControlsBusy(false);
+
     if (error) {
-        alert(error.message);
+        showNotification(
+            error.message,
+            'error'
+        );
+
+        await loadTimer();
         return;
     }
 
-    document.getElementById(
-        'secretContent'
-    ).innerText =
-        data;
+    timerState =
+        normaliseRpcTimer(data);
 
-    await loadBalance();
-    await loadShop();
+    configureTimerDisplay();
+    renderTimer();
+
+    showNotification(
+        'Study timer started.',
+        'success'
+    );
 }
 
-window.buyItem =
-    buyItem;
 
+// =========================================================
+// PAUSE TIMER
+// =========================================================
 
-// ---------------------
-// VIEW PURCHASED SECRET
-// ---------------------
-
-async function viewSecret(itemId) {
-
-    const {
-        data,
-        error
-    } =
-        await supabase.rpc(
-            'get_secret',
-            {
-                p_item_id: itemId
-            }
-        );
-
-    if (error) {
-        alert(error.message);
+async function pauseTimer() {
+    if (!timerState.running) {
         return;
     }
 
-    document.getElementById(
-        'secretContent'
-    ).innerText =
-        data;
+    setTimerControlsBusy(true);
+
+    timerStatusElement.textContent =
+        'Pausing timer...';
+
+    const { data, error } =
+        await supabase.rpc(
+            'pause_study_timer'
+        );
+
+    setTimerControlsBusy(false);
+
+    if (error) {
+        /*
+         * A server function may automatically reset the
+         * timer if the 12-hour maximum has been exceeded.
+         */
+        showNotification(*            error.message,
+       *    'error'
+        );
+
+        aw*it loadTimer();
+        return;
+  * }
+
+    timerState =
+        norma*iseRpcTimer(data);
+
+    configureT*merDisplay();
+    renderTimer();
+
+*   showNotification(
+        'Stud* timer paused.',
+        'success'*    );
 }
 
-window.viewSecret =
-    viewSecret;
 
+// ====================*==================================*=
+// RESET TIMER
+// ==============*==================================*=======
 
-// ---------------------
-// LOGOUT
-// ---------------------
+function requestTimerRese*() {
+    const confirmed =
+       *window.confirm(
+            'Reset*the timer? All uncollected study t*me will be lost.'
+        );
 
-async function logout() {
+    *f (!confirmed) {
+        return;
+ *  }
 
-    await supabase.auth.signOut();
-
-    location.reload();
+    resetTimer();
 }
 
-window.logout =
-    logout;
+
+async f*nction resetTimer(
+    showSuccess*essage = true
+) {
+    setTimerCont*olsBusy(true);
+
+    const { error * =
+        await supabase.rpc(
+   *        'reset_study_timer'
+      * );
+
+    setTimerControlsBusy(fals*);
+
+    if (error) {
+        showN*tification(
+            error.mess*ge,
+            'error'
+        );*
+        return false;
+    }
+
+    *imerState =
+        createEmptyTim*rState();
+
+    configureTimerDispl*y();
+    renderTimer();
+
+    if (s*owSuccessMessage) {
+        showNo*ification(
+            'Study time* reset.',
+            'success'
+  *     );
+    }
+
+    return true;
+}
+*
+// ==============================*==========================
+// AUTO*ATIC 12-HOUR CANCELLATION
+// =====*==================================*================
+
+async function c*ncelExpiredTimer() {
+    if (timer*ancellationInProgress) {
+        r*turn;
+    }
+
+    timerCancellation*nProgress = true;
+
+    stopTimerDi*play();
+
+    const timerWasReset =*        await resetTimer(false);
+
+*   timerCancellationInProgress = f*lse;
+
+    if (timerWasReset) {
+   *    showNotification(
+            *The timer reached the 12-hour limi* and was cancelled. No coins were *warded.',
+            'warning'
+  *     );
+    }
+}
+
+
+// =============*==================================*========
+// COLLECT POINTS
+// ====*==================================*=================
+
+async function *ollectPoints() {
+    const current*econds =
+        getDisplayedSecon*s();
+
+    if (
+        currentSeco*ds >=
+        MAX_TIMER_SECONDS
+  * ) {
+        await cancelExpiredTi*er();
+        return;
+    }
+
+    i* (currentSeconds < 60) {
+        s*owNotification(
+            'Study*for at least one complete minute b*fore collecting.',
+            'wa*ning'
+        );
+
+        return;
+*   }
+
+    setTimerControlsBusy(tru*);
+
+    timerStatusElement.textCon*ent =
+        'Collecting coins...*;
+
+    const { data: points, error*} =
+        await supabase.rpc(
+  *         'collect_study_points'
+  *     );
+
+    setTimerControlsBusy(*alse);
+
+    if (error) {
+        s*owNotification(
+            error.*essage,
+            'error'
+      * );
+
+        await loadTimer();
+  *     return;
+    }
+
+    const awar*edPoints =
+        Number(points) *| 0;
+
+    showNotification(
+      * `${awardedPoints} coin${
+        *   awardedPoints === 1
+           *    ? ''
+                : 's'
+   *    } collected.`,
+        'succes*'
+    );
+
+    await Promise.all([
+        loadBalance(),
+        load*imer()
+    ]);
+}
+
+
+// ============*==================================*=========
+// TIMER DISPLAY
+// ====*==================================*=================
+
+function config*reTimerDisplay() {
+    stopTimerDi*play();
+
+    renderTimer();
+
+    t*merDisplayInterval =
+        windo*.setInterval(
+            updateTi*erDisplay,
+            1000
+      * );
+}
+
+
+function stopTimerDisplay(* {
+    if (timerDisplayInterval !=* null) {
+        window.clearInter*al(
+            timerDisplayInterv*l
+        );
+
+        timerDisplay*nterval = null;
+    }
+}
+
+
+function*updateTimerDisplay() {
+    const t*talSeconds =
+        getDisplayedS*conds();
+
+    if (
+        totalSe*onds >=
+        MAX_TIMER_SECONDS
+*   ) {
+        cancelExpiredTimer(*;
+        return;
+    }
+
+    rende*Timer();
+}
+
+
+function getDisplayed*econds() {
+    const accumulatedSe*onds =
+        Math.max(
+         *  0,
+            Number(
+         *      timerState
+                 *  .accumulated_seconds
+           *) || 0
+        );
+
+    if (
+      * !timerState.running ||
+        !t*merState.started_at
+    ) {
+      * return accumulatedSeconds;
+    }
+*    const startedAt =
+        new *ate(
+            timerState.starte*_at
+        ).getTime();
+
+    if (*        !Number.isFinite(startedAt*
+    ) {
+        return accumulate*Seconds;
+    }
+
+    const runningS*conds =
+        Math.max(
+        *   0,
+            Math.floor(
+    *           (
+                    D*te.now() -
+                    sta*tedAt
+                ) / 1000
+   *        )
+        );
+
+    return (*        accumulatedSeconds +
+     *  runningSeconds
+    );
+}
+
+
+functi*n renderTimer() {
+    const totalS*conds =
+        Math.min(
+        *   getDisplayedSeconds(),
+        *   MAX_TIMER_SECONDS
+        );
+
+ *  timerElement.textContent =
+     *  formatDuration(
+            tota*Seconds
+        );
+
+    const isRu*ning =
+        Boolean(timerState.*unning);
+
+    if (isRunning) {
+   *    timerStatusElement.textContent*=
+            'Study session runni*g';
+    } else if (totalSeconds > *) {
+        timerStatusElement.tex*Content =
+            'Study sessi*n paused';
+    } else {
+        ti*erStatusElement.textContent =
+    *       'Ready to study';
+    }
+
+  * startTimerButton.textContent =
+  *     !isRunning &&
+        totalSe*onds > 0
+            ? 'Resume'
+  *         : 'Start';
+
+    startTime*Button.disabled =
+        isRunnin*;
+
+    pauseTimerButton.disabled =*        !isRunning;
+
+    resetTime*Button.disabled =
+        totalSec*nds === 0;
+
+    collectPointsButto*.disabled =
+        totalSeconds <*60;
+}
+
+
+function formatDuration(
+ *  totalSeconds
+) {
+    const safeS*conds =
+        Math.max(
+        *   0,
+            Math.floor(total*econds)
+        );
+
+    const hour* =
+        Math.floor(
+           *safeSeconds / 3600
+        );
+
+   *const minutes =
+        Math.floor*
+            (
+                saf*Seconds % 3600
+            ) / 60
+*       );
+
+    const seconds =
+   *    safeSeconds % 60;
+
+    return *
+        hours,
+        minutes,
+        seconds
+    ]
+        .map(v*lue =>
+            String(value)
+ *              .padStart(2, '0')
+  *     )
+        .join(':');
+}
+
+
+fun*tion setTimerControlsBusy(
+    bus*
+) {
+    if (busy) {
+        start*imerButton.disabled = true;
+      * pauseTimerButton.disabled = true;*        resetTimerButton.disabled * true;
+        collectPointsButton*disabled = true;
+    } else {
+    *   renderTimer();
+    }
+}
+
+
+// ===*==================================*==================
+// SHOP
+// ====*==================================*=================
+
+async function *oadShop() {
+    shopElement.replac*Children();
+
+    const user =
+    *   await getCurrentUser();
+
+    if*(!user) {
+        return;
+    }
+
+ *  const [
+        itemsResult,
+        purchasesResult
+    ] = await *romise.all([
+        supabase
+            .from('shop_items')
+       *    .select(`
+                id,
+*               name,
+             *  description,
+                pri*e
+            `)
+            .eq('*ctive', true)
+            .order('*rice'),
+
+        supabase
+        *   .from('purchases')
+            *select('item_id')
+            .eq(*user_id', user.id)
+    ]);
+
+    if*(itemsResult.error) {
+        cons*le.error(
+            'Could not l*ad shop:',
+            itemsResult*error
+        );
+
+        shopElem*nt.textContent =
+            'The *hop could not be loaded.';
+
+      * return;
+    }
+
+    if (purchasesR*sult.error) {
+        console.erro*(
+            'Could not load purc*ases:',
+            purchasesResul*.error
+        );
+
+        shopEle*ent.textContent =
+            'You* purchases could not be loaded.';
+*        return;
+    }
+
+    const p*rchasedIds =
+        new Set(
+    *       (
+                purchases*esult.data ??
+                []
+ *          ).map(
+                p*rchase =>
+                    purc*ase.item_id
+            )
+        *;
+
+    const items =
+        items*esult.data ?? [];
+
+    if (items.l*ngth === 0) {
+        shopElement.*extContent =
+            'No rewar*s are currently available.';
+
+    *   return;
+    }
+
+    for (const i*em of items) {
+        const shopI*em =
+            createShopItem(
+ *              item,
+              * purchasedIds.has(
+               *    item.id
+                )
+    *       );
+
+        shopElement.app*ndChild(
+            shopItem
+    *   );
+    }
+}
+
+
+function createSho*Item(
+    item,
+    purchased
+) {
+*   const article =
+        documen*.createElement(
+            'artic*e'
+        );
+
+    article.classNa*e =
+        'shop-item';
+
+    cons* itemDetails =
+        document.cr*ateElement(
+            'div'
+    *   );
+
+    itemDetails.className =*        'shop-item-details';
+
+    *onst title =
+        document.crea*eElement(
+            'h3'
+       *);
+
+    title.textContent =
+      * item.name;
+
+    const description*=
+        document.createElement(
+*           'p'
+        );
+
+    des*ription.className =
+        'item-*escription';
+
+    description.text*ontent =
+        item.description *?
+        '';
+
+    const price =
+ *      document.createElement(
+    *       'p'
+        );
+
+    price.c*assName =
+        'item-price';
+
+ *  price.textContent =
+        `${i*em.price} coins`;
+
+    itemDetails*append(
+        title,
+        des*ription,
+        price
+    );
+
+   *const button =
+        document.cr*ateElement(
+            'button'
+ *      );
+
+    button.type = 'butto*';
+
+    button.textContent =
+     *  purchased
+            ? 'View'
+ *          : 'Unlock';
+
+    if (pur*hased) {
+        button.classList.*dd(
+            'secondary-button'*        );
+    }
+
+    button.addEv*ntListener(
+        'click',
+     *  async () => {
+            button*disabled = true;
+
+            if (*urchased) {
+                await *iewSecret(
+                    ite*.id
+                );
+           *} else {
+                await buy*tem(
+                    item.id
+ *              );
+            }
+
+  *         button.disabled = false;
+*       }
+    );
+
+    article.appen*(
+        itemDetails,
+        but*on
+    );
+
+    return article;
+}
+
+*// ===============================*=========================
+// BUY I*EM
+// ============================*============================
+
+asyn* function buyItem(itemId) {
+    co*st { data, error } =
+        await*supabase.rpc(
+            'buy_ite*',
+            {
+                p*item_id: itemId
+            }
+    *   );
+
+    if (error) {
+        sh*

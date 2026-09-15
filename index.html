@@ -3,138 +3,223 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Shop</title>
 
-    style.css
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Study Rewards</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 </head>
 
 <body>
 
-    <!-- LOGIN -->
+    <main class="page-container">
 
-    <div id="login" class="card">
+        <!-- LOGIN -->
 
-        <h1>Virtual Shop</h1>
+        <section
+            id="login"
+            class="card login-card"
+        >
+            <h1>Study Rewards</h1>
 
-        <input
-            id="email"
-            type="email"
-            placeholder="Email">
+            <p class="login-introduction">
+                Study, earn coins and unlock rewards.
+            </p>
 
-        <input
-            id="password"
-            type="password"
-            placeholder="Password">
+            <form id="loginForm">
 
-        <button onclick="login()">
-            Login
-        </button>
+                <label for="email">
+                    Email
+                </label>
 
-    </div>
+                <input
+                    id="email"
+                    type="email"
+                    autocomplete="email"
+                    required
+                >
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    id="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <button type="submit">
+                    Log in
+                </button>
+
+            </form>
+
+            <p
+                id="loginMessage"
+                class="message"
+                role="status"
+            ></p>
+        </section>
 
 
-    <!-- APP -->
+        <!-- APPLICATION -->
 
-    <div
-        id="app"
-        style="display:none;">
+        <div
+            id="app"
+            hidden
+        >
 
-        <header>
+            <header>
 
-            <h1>Virtual Shop</h1>
+                <div>
+                    <h1>Study Rewards</h1>
 
-            <button
-                class="logout-btn"
-                onclick="logout()">
+                    <p class="muted">
+                        One complete study minute earns one coin.
+                    </p>
+                </div>
 
-                Logout
+                <button
+                    id="logoutButton"
+                    class="danger-button"
+                    type="button"
+                >
+                    Log out
+                </button>
 
-            </button>
+            </header>
 
-        </header>
 
-   <!-- TIMER -->
-
-	   <div class="card">
-
-    <h2>Study Timer</h2>
-
-    <div
-        id="timer"
-        class="balance">
-
-        00:00:00
-
-    </div>
-
-    <button onclick="startTimer()">
-        Start
-    </button>
-
-    <button onclick="pauseTimer()">
-        Pause
-    </button>
-
-    <button onclick="resetTimer()">
-        Reset
-    </button>
-
-    <button onclick="collectPoints()">
-        Collect Coins
-    </button>
-
-</div>
-
-        <!-- WALLET -->
-
-        <div class="card">
-
-            <h2>Your Wallet</h2>
+            <!-- NOTIFICATION -->
 
             <div
-                id="balance"
-                class="balance">
+                id="notification"
+                class="notification"
+                role="status"
+                hidden
+            ></div>
 
-                0 coins
 
-            </div>
+            <!-- TIMER -->
+
+            <section class="card timer-card">
+
+                <h2>Study Timer</h2>
+
+                <div
+                    id="timer"
+                    class="timer-display"
+                    aria-live="off"
+                >
+                    00:00:00
+                </div>
+
+                <p
+                    id="timerStatus"
+                    class="timer-status"
+                    role="status"
+                >
+                    Ready to study
+                </p>
+
+                <div class="timer-controls">
+
+                    <button
+                        id="toggleTimerButton"
+                        type="button"
+                    >
+                        Start
+                    </button>
+
+                    <button
+                        id="resetTimerButton"
+                        class="secondary-button"
+                        type="button"
+                    >
+                        Reset
+                    </button>
+
+                    <button
+                        id="collectPointsButton"
+                        class="collect-button"
+                        type="button"
+                    >
+                        Collect coins
+                    </button>
+
+                </div>
+
+                <p class="timer-help">
+                    The timer continues when this page is closed,
+                    so studying from paper or books is still counted.
+                </p>
+
+                <span class="timer-limit">
+                    Uncollected time is cancelled at 12 hours
+                </span>
+
+            </section>
+
+
+            <!-- WALLET -->
+
+            <section class="card">
+
+                <h2>Your Wallet</h2>
+
+                <div
+                    id="balance"
+                    class="balance"
+                >
+                    0 coins
+                </div>
+
+                <p class="muted">
+                    Coins can only be earned from completed
+                    study minutes.
+                </p>
+
+            </section>
+
+
+            <!-- SHOP -->
+
+            <section class="card">
+
+                <h2>Shop</h2>
+
+                <div id="shop"></div>
+
+            </section>
+
+
+            <!-- UNLOCKED CONTENT -->
+
+            <section class="card">
+
+                <h2>Unlocked Content</h2>
+
+                <pre id="secretContent">Nothing selected.</pre>
+
+            </section>
 
         </div>
 
+    </main>
 
-        <!-- SHOP -->
-
-        <div class="card">
-
-            <h2>Shop</h2>
-
-            <div id="shop">
-
-            </div>
-
-        </div>
-
-
-        <!-- UNLOCKED CONTENT -->
-
-        <div class="card">
-
-            <h2>Unlocked Content</h2>
-
-            <pre
-                id="secretContent">
-
-Nothing selected.
-
-            </pre>
-
-        </div>
-
-    </div>
-
-
-    <script type="module" src="app.js"></script>
+    <script
+        type="module"
+        src="app.js"
+    ></script>
 
 </body>
 

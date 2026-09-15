@@ -165,7 +165,7 @@ async function loadBalance() {
 
     const { data, error } = await supabase
         .from('profiles')
-        .select('balance')
+        .select('balance, total_study_seconds')
         .eq('id', user.id)
         .single();
 
@@ -176,6 +176,7 @@ async function loadBalance() {
     }
 
     balanceElement.textContent = `${data.balance} coins`;
+    updateStudyTime(data.total_study_seconds || 0);
 }
 
 async function loadTimer(showExpiryMessage = true) {
@@ -352,7 +353,14 @@ async function collectPoints() {
 
     if (data.balance !== null && data.balance !== undefined) {
         balanceElement.textContent = `${data.balance} coins`;
-    } else {
+    }
+
+    if (data.total_study_seconds !== null &&
+        data.total_study_seconds !== undefined) {
+        updateStudyTime(data.total_study_seconds);
+    }
+
+    if (data.balance === null || data.balance === undefined) {
         await loadBalance();
     }
 

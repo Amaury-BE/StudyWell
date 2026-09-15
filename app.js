@@ -320,6 +320,7 @@ async function collectPoints() {
     timerStatusElement.textContent = 'Collecting coins...';
 
     const { data, error } = await supabase.rpc('collect_study_points');
+    console.log(data);
 
     if (error) {
         setTimerControlsBusy(false);

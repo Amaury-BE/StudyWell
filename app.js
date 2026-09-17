@@ -320,7 +320,6 @@ async function collectPoints() {
     timerStatusElement.textContent = 'Collecting coins...';
 
     const { data, error } = await supabase.rpc('collect_study_points');
-    console.log(data);
 
     if (error) {
         setTimerControlsBusy(false);
@@ -612,4 +611,23 @@ function updateStudyTime(totalSeconds) {
 
     document.getElementById('study-time').textContent =
         `${hours}h ${minutes}m`;
+}
+// Theme switcher added for the redesigned interface.
+const themeToggleButton = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('studywell-theme');
+const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+applyTheme(savedTheme || preferredTheme);
+
+themeToggleButton?.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    localStorage.setItem('studywell-theme', nextTheme);
+});
+
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    if (!themeToggleButton) return;
+    const dark = theme === 'dark';
+    themeToggleButton.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    themeToggleButton.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
 }

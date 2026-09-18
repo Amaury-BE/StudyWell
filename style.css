@@ -256,3 +256,185 @@ html[data-theme="dark"] .water-surface-front { background: rgba(18, 112, 196, .3
   .water-body, .water-surface { transition: none; }
   .water-surface { animation: none; }
 }
+
+
+/* ======================================================
+   FIXED APP CONTROLS AND WELL WALLS
+   This block is intentionally last so it wins over older rules.
+   ====================================================== */
+
+/* Layer order: water 0, walls 1, page content 2, fixed controls 100. */
+#app {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  padding-top: 120px;
+  padding-bottom: 120px;
+}
+
+.water-progress {
+  z-index: 0 !important;
+}
+
+.well-walls {
+  position: fixed !important;
+  inset: 0;
+  z-index: 1 !important;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.well-wall {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(54px, 9vw, 132px);
+  min-height: 100dvh;
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-size: 100% auto;
+}
+
+/* Light asset is supplied as a LEFT wall. */
+.well-wall-left {
+  left: 0;
+  background-image: url("https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Wall-Light.png");
+  transform: none;
+  transform-origin: center;
+}
+
+.well-wall-right {
+  right: 0;
+  background-image: url("https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Wall-Light.png");
+  transform: scaleX(-1);
+  transform-origin: center;
+}
+
+/* Dark asset is supplied as a RIGHT wall, so only the left copy is mirrored. */
+html[data-theme="dark"] .well-wall-right {
+  background-image: url("https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Wall-Dark.png");
+  transform: none;
+}
+
+html[data-theme="dark"] .well-wall-left {
+  background-image: url("https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Wall-Dark.png");
+  transform: scaleX(-1);
+}
+
+/* Keep normal app content above the walls and water. */
+#app > :not(.water-progress):not(.well-walls):not(.fixed-header):not(.logout-button) {
+  position: relative;
+  z-index: 2;
+}
+
+/* The header is only a semantic container. Its children anchor to the viewport. */
+.fixed-header {
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none;
+}
+
+.compact-brand {
+  position: fixed !important;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(18px, env(safe-area-inset-left));
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 100 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  margin: 0 !important;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-radius: 10px;
+  pointer-events: auto;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.balance {
+  position: fixed !important;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 100 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px !important;
+  margin: 0 !important;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-radius: 10px;
+  pointer-events: auto;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.logout-button {
+  position: fixed !important;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  top: auto !important;
+  left: auto !important;
+  z-index: 100 !important;
+  margin: 0 !important;
+}
+
+.theme-toggle {
+  z-index: 100 !important;
+}
+
+/* Leave enough horizontal room for content without letting walls dominate phones. */
+@media (max-width: 700px) {
+  #app {
+    padding-top: 92px;
+    padding-bottom: 96px;
+  }
+
+  .well-wall {
+    width: clamp(28px, 8vw, 44px);
+  }
+
+  .compact-brand {
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    gap: 6px;
+    padding: 4px 6px;
+  }
+
+  .compact-brand img {
+    width: 36px;
+    height: 46px;
+  }
+
+  .compact-brand .wordmark {
+    font-size: 13px;
+  }
+
+  .balance {
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    padding: 6px 8px !important;
+    font-size: 16px;
+  }
+
+  .logout-button {
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 400px) {
+  .well-wall {
+    width: 26px;
+  }
+
+  .compact-brand .wordmark {
+    display: none;
+  }
+}

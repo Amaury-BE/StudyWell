@@ -21,7 +21,10 @@ const toggleTimerButton = document.getElementById('toggleTimerButton');
 const resetTimerButton = document.getElementById('resetTimerButton');
 const collectPointsButton = document.getElementById('collectPointsButton');
 const shopElement = document.getElementById('shop');
-const secretContentElement = document.getElementById('secretContent');
+const DROP_LIGHT_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Light.png';
+const DROP_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Dark.png';
+const CART_LIGHT_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Light.png';
+const CART_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Dark.png';
 const notificationElement = document.getElementById('notification');
 
 let timerState = createEmptyTimerState();
@@ -171,11 +174,11 @@ async function loadBalance() {
 
     if (error) {
         console.error('Could not load balance:', error);
-        balanceElement.textContent = 'Balance unavailable';
+        setBalance('–');
         return;
     }
 
-    balanceElement.textContent = `${data.balance} coins`;
+    setBalance(data.balance);
     updateStudyTime(data.total_study_seconds || 0);
 }
 
@@ -317,7 +320,7 @@ async function collectPoints() {
     }
 
     setTimerControlsBusy(true);
-    timerStatusElement.textContent = 'Collecting coins...';
+    timerStatusElement.textContent = 'Collecting drops...';
 
     const { data, error } = await supabase.rpc('collect_study_points');
 
@@ -335,7 +338,7 @@ async function collectPoints() {
 
     if (data?.expired) {
         showNotification(
-            'The timer reached the 12-hour limit. All uncollected time was cancelled and no coins were awarded.',
+            'The timer reached the 12-hour limit. All uncollected time was cancelled and no drops were awarded.',
             'warning'
         );
         return;
@@ -352,7 +355,7 @@ async function collectPoints() {
     const points = Number(data.points) || 0;
 
     if (data.balance !== null && data.balance !== undefined) {
-        balanceElement.textContent = `${data.balance} coins`;
+        setBalance(data.balance);
     }
 
     if (data.total_study_seconds !== null &&
@@ -365,7 +368,7 @@ async function collectPoints() {
     }
 
     showNotification(
-        `${points} coin${points === 1 ? '' : 's'} collected.`,
+        `${points} drop${points === 1 ? '' : 's'} collected.`,
         'success'
     );
 }
@@ -520,74 +523,86 @@ async function loadShop() {
 
 function createShopItem(item, purchased) {
     const article = document.createElement('article');
-    article.className = 'shop-item';
-
+    article.className = `shop-item${purchased ? ' purchased' : ''}`;
     const details = document.createElement('div');
     details.className = 'shop-item-details';
-
     const title = document.createElement('h3');
     title.textContent = item.name;
-
     const description = document.createElement('p');
     description.className = 'item-description';
     description.textContent = item.description ?? '';
-
-    const price = document.createElement('p');
-    price.className = 'item-price';
-    price.textContent = `${item.price} coins`;
-
-    details.append(title, description, price);
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = purchased ? 'View' : 'Unlock';
-
-    if (purchased) button.classList.add('secondary-button');
-
-    button.addEventListener('click', async () => {
-        button.disabled = true;
-
-        if (purchased) {
-            await viewSecret(item.id);
-        } else {
-            await buyItem(item.id);
-        }
-
-        button.disabled = false;
-    });
-
-    article.append(details, button);
+    details.append(title, description);
+    const content = document.createElement('div');
+    content.className = 'shop-item-content';
+    if (purchased) {
+        content.classList.add('item-secret', 'item-secret-loading');
+        content.textContent = 'Loading…';
+        loadSecretInto(item.id, content);
+    } else {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'unlock-button';
+        button.setAttribute('aria-label', `Unlock ${item.name} for ${item.price} drops`);
+        button.append(createDropIcon(), document.createTextNode(String(item.price)));
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            const unlocked = await buyItem(item.id);
+            if (!unlocked) button.disabled = false;
+        });
+        content.appendChild(button);
+    }
+    article.append(details, content);
     return article;
 }
-
+function createDropIcon() {
+    const image = document.createElement('img');
+    image.className = 'drop-icon theme-drop-icon';
+    image.src = document.documentElement.dataset.theme === 'dark' ? DROP_DARK_URL : DROP_LIGHT_URL;
+    image.alt = '';
+    image.setAttribute('aria-hidden', 'true');
+    return image;
+}
 async function buyItem(itemId) {
-    const { data, error } = await supabase.rpc('buy_item', {
-        p_item_id: itemId
-    });
-
+    const { error } = await supabase.rpc('buy_item', { p_item_id: itemId });
     if (error) {
         showNotification(error.message, 'error');
-        return;
+        return false;
     }
-
-    secretContentElement.textContent = data ?? 'No content is available.';
     await Promise.all([loadBalance(), loadShop()]);
     showNotification('Reward unlocked.', 'success');
+    return true;
 }
-
-async function viewSecret(itemId) {
-    const { data, error } = await supabase.rpc('get_secret', {
-        p_item_id: itemId
-    });
-
+async function loadSecretInto(itemId, container) {
+    const { data, error } = await supabase.rpc('get_secret', { p_item_id: itemId });
+    container.classList.remove('item-secret-loading');
+    container.replaceChildren();
     if (error) {
-        showNotification(error.message, 'error');
+        container.textContent = 'The secret could not be loaded.';
         return;
     }
-
-    secretContentElement.textContent = data ?? 'No content is available.';
+    renderSecret(container, data ?? 'No content is available.');
 }
-
+function renderSecret(container, value) {
+    const text = String(value);
+    const urlPattern = /https?:\/\/[^\s<]+/g;
+    let cursor = 0;
+    for (const match of text.matchAll(urlPattern)) {
+        const index = match.index ?? 0;
+        if (index > cursor) container.append(document.createTextNode(text.slice(cursor, index)));
+        const link = document.createElement('a');
+        link.href = match[0];
+        link.textContent = match[0];
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        container.appendChild(link);
+        cursor = index + match[0].length;
+    }
+    if (cursor < text.length) container.append(document.createTextNode(text.slice(cursor)));
+}
+function setBalance(value) {
+    const valueElement = document.getElementById('balanceValue');
+    if (valueElement) valueElement.textContent = String(value ?? 0);
+}
 function showNotification(message, type = 'success') {
     notificationElement.textContent = message;
     notificationElement.className = `notification notification-${type}`;
@@ -611,4 +626,30 @@ function updateStudyTime(totalSeconds) {
 
     document.getElementById('study-time').textContent =
         `${hours}h ${minutes}m`;
+}
+// Theme switcher added for the redesigned interface.
+const themeToggleButton = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('studywell-theme');
+const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+applyTheme(savedTheme || preferredTheme);
+
+themeToggleButton?.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    localStorage.setItem('studywell-theme', nextTheme);
+});
+
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    updateThemeImages(theme);
+    if (!themeToggleButton) return;
+    const dark = theme === 'dark';
+    themeToggleButton.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    themeToggleButton.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+}
+
+function updateThemeImages(theme) {
+    const dark = theme === 'dark';
+    document.querySelectorAll('.theme-drop-icon').forEach(image => image.src = dark ? DROP_DARK_URL : DROP_LIGHT_URL);
+    document.querySelectorAll('.theme-cart-icon').forEach(image => image.src = dark ? CART_DARK_URL : CART_LIGHT_URL);
 }

@@ -1,232 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Study Rewards</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Study Well</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-    <main class="page-container">
-
-        <!-- LOGIN -->
-
-        <section
-            id="login"
-            class="card login-card"
-        >
-            <h1>Study Rewards</h1>
-
-            <p class="login-introduction">
-                Study, earn coins and unlock rewards.
-            </p>
-
-            <form id="loginForm">
-
-                <label for="email">
-                    Email
-                </label>
-
-                <input
-                    id="email"
-                    type="email"
-                    autocomplete="email"
-                    required
-                >
-
-                <label for="password">
-                    Password
-                </label>
-
-                <input
-                    id="password"
-                    type="password"
-                    autocomplete="current-password"
-                    required
-                >
-
-                <button type="submit">
-                    Log in
-                </button>
-
-            </form>
-
-            <p
-                id="loginMessage"
-                class="message"
-                role="status"
-            ></p>
-        </section>
-
-
-        <!-- APPLICATION -->
-
-        <div
-            id="app"
-            hidden
-        >
-
-            <header>
-
-                <div>
-                    <h1>Study Rewards</h1>
-
-                    <p class="muted">
-                        One complete study minute earns one coin.
-                    </p>
-                </div>
-
-                <button
-                    id="logoutButton"
-                    class="danger-button"
-                    type="button"
-                >
-                    Log out
-                </button>
-
-            </header>
-
-
-            <!-- NOTIFICATION -->
-
-            <div
-                id="notification"
-                class="notification"
-                role="status"
-                hidden
-            ></div>
-
-
-            <!-- TIMER -->
-
-            <section class="card timer-card">
-
-                <h2>Study Timer</h2>
-
-                <div
-                    id="timer"
-                    class="timer-display"
-                    aria-live="off"
-                >
-                    00:00:00
-                </div>
-
-                <p
-                    id="timerStatus"
-                    class="timer-status"
-                    role="status"
-                >
-                    Ready to study
-                </p>
-
-                <div class="timer-controls">
-
-                    <button
-                        id="toggleTimerButton"
-                        type="button"
-                    >
-                        Start
-                    </button>
-
-                    <button
-                        id="resetTimerButton"
-                        class="secondary-button"
-                        type="button"
-                    >
-                        Reset
-                    </button>
-
-                    <button
-                        id="collectPointsButton"
-                        class="collect-button"
-                        type="button"
-                    >
-                        Collect coins
-                    </button>
-
-                </div>
-
-                <p class="timer-help">
-                    The timer continues when this page is closed,
-                    so studying from paper or books is still counted.
-                </p>
-
-                <span class="timer-limit">
-                    Uncollected time is cancelled at 12 hours
-                </span>
-
-<div>
-    Total study time:
-    <span id="study-time">0h 0m</span>
-</div>
-
-
-            </section>
-
-
-            <!-- WALLET -->
-
-            <section class="card">
-
-                <h2>Your Wallet</h2>
-
-                <div
-                    id="balance"
-                    class="balance"
-                >
-                    0 coins
-                </div>
-
-                <p class="muted">
-                    Coins can only be earned from completed
-                    study minutes.
-                </p>
-
-            </section>
-
-
-            <!-- SHOP -->
-
-            <section class="card">
-
-                <h2>Shop</h2>
-
-                <div id="shop"></div>
-
-            </section>
-
-
-            <!-- UNLOCKED CONTENT -->
-
-            <section class="card">
-
-                <h2>Unlocked Content</h2>
-
-                <pre id="secretContent">Nothing selected.</pre>
-
-            </section>
-
+  <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode"><span aria-hidden="true">◐</span></button>
+  <main class="page-container">
+    <section id="login" class="login-screen" aria-labelledby="loginTitle">
+      <div class="login-brand">
+        <h1 id="loginTitle" class="wordmark">Study Well<sup>®</sup></h1>
+        <p>Become a well of knowledge.</p>
+        <a href="https://github.com/Amaury-BE/StudyWell/blob/main/StudyWell-Logo-Light.jpg" target="_blank" rel="noopener noreferrer">
+          <img class="login-logo" src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/StudyWell-Logo-Light.jpg" alt="Study Well logo">
+        </a>
+      </div>
+      <form id="loginForm" class="login-form">
+        <div><label class="sr-only" for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="Email" required></div>
+        <div><label class="sr-only" for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Password" required></div>
+        <button type="submit">Log in</button>
+      </form>
+      <p id="loginMessage" class="message" role="status"></p>
+    </section>
+    <div id="app" hidden>
+      <header class="app-header fixed-header">
+        <a class="compact-brand" href="https://github.com/Amaury-BE/StudyWell/blob/main/StudyWell-Logo-Light.jpg" target="_blank" rel="noopener noreferrer">
+          <img src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/StudyWell-Logo-Light.jpg" alt="Study Well logo">
+          <span class="wordmark">Study Well<sup>®</sup></span>
+        </a>
+        <div id="balance" class="balance" aria-label="Drop balance">
+          <img class="drop-icon theme-drop-icon" src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Light.png" alt="">
+          <span id="balanceValue">0</span>
         </div>
-
-    </main>
-
-    <script
-        type="module"
-        src="app.js"
-    ></script>
-
+      </header>
+      <div id="notification" class="notification" role="status" hidden></div>
+      <section class="timer-panel" aria-labelledby="timerTitle">
+        <h2 id="timerTitle" class="sr-only">Study timer</h2>
+        <div id="timer" class="timer-display" aria-live="off">00:00:00</div>
+        <p id="timerStatus" class="sr-only" role="status">Ready to study</p>
+        <div class="timer-controls">
+          <button id="toggleTimerButton" type="button">Start</button>
+          <button id="resetTimerButton" type="button">Reset</button>
+          <button id="collectPointsButton" type="button">Collect</button>
+        </div>
+        <p class="study-total">Total study time: <span id="study-time">0h 0m</span></p>
+        <p class="timer-note">One complete study minute earns one drop. Uncollected time is cancelled after 12 hours.</p>
+      </section>
+      <section class="shop-card" aria-labelledby="shopTitle">
+        <h2 id="shopTitle"><img class="cart-icon theme-cart-icon" src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Light.png" alt=""><span>Shop</span></h2>
+        <div id="shop"></div>
+      </section>
+      <button id="logoutButton" class="logout-button" type="button">Log out</button>
+    </div>
+  </main>
+  <script type="module" src="app.js"></script>
 </body>
-
 </html>

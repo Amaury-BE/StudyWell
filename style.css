@@ -170,9 +170,58 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   .balance { font-size: 16px; }
   .timer-display { font-size: 48px; }
 }
-.fixed-header { position: fixed; inset: 0 0 auto 0; z-index: 15; padding: 18px clamp(18px,5vw,70px); pointer-events: none; }
-.fixed-header > * { pointer-events: auto; }
-.compact-brand,.balance { background: var(--bg); border-radius: 10px; padding: 5px 9px; }
+.fixed-header {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.fixed-header > * {
+  pointer-events: auto;
+}
+
+/* Logo + brand name */
+.compact-brand {
+  position: fixed;
+  top: 18px;
+  left: clamp(18px,5vw,70px);
+  z-index: 26;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 5px 9px;
+}
+
+/* Drop counter */
+.balance {
+  position: fixed;
+  top: 18px;
+  right: clamp(18px,5vw,70px);
+  z-index: 26;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 5px 9px;
+}
+
+/* Logout button */
+.logout-button {
+  position: fixed;
+  right: clamp(18px,5vw,70px);
+  bottom: clamp(18px,6vh,70px);
+  z-index: 26;
+  margin: 0;
+}
+
 .balance::before,.item-price::before { content: none; }
 .drop-icon { width: 25px; height: 25px; object-fit: contain; }
 .cart-icon { width: 29px; height: 29px; object-fit: contain; }
@@ -201,6 +250,8 @@ button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   .unlock-button { width: 100%; }
   .logout-button { right: 12px; bottom: 12px; }
   .theme-toggle { left: 12px; bottom: 12px; }
+  .compact-brand { top: 10px; left: 10px; }
+  .balance { top: 10px; right: 10px; }
 }
 
 /* Dynamic knowledge-well background */

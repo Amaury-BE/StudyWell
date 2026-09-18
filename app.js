@@ -23,6 +23,13 @@ const collectPointsButton = document.getElementById('collectPointsButton');
 const shopElement = document.getElementById('shop');
 const secretContentElement = document.getElementById('secretContent');
 const notificationElement = document.getElementById('notification');
+const themeToggleButton = document.getElementById('themeToggleButton');
+const headerDropIcon = document.getElementById('headerDropIcon');
+const shopCartIcon = document.getElementById('shopCartIcon');
+const LIGHT_DROP_ICON = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Light.png';
+const DARK_DROP_ICON = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Dark.png';
+const LIGHT_CART_ICON = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Light.png';
+const DARK_CART_ICON = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Dark.png';
 
 let timerState = createEmptyTimerState();
 let timerDisplayInterval = null;
@@ -72,6 +79,8 @@ function registerEventListeners() {
     toggleTimerButton.addEventListener('click', toggleTimer);
     resetTimerButton.addEventListener('click', requestTimerReset);
     collectPointsButton.addEventListener('click', collectPoints);
+    themeToggleButton.addEventListener('click', toggleTheme);
+    applyTheme(localStorage.getItem('studywell-theme') || 'light');
 }
 
 supabase.auth.onAuthStateChange((event, session) => {
@@ -171,11 +180,11 @@ async function loadBalance() {
 
     if (error) {
         console.error('Could not load balance:', error);
-        balanceElement.textContent = 'Balance unavailable';
+        balanceElement.textContent = '—';
         return;
     }
 
-    balanceElement.textContent = `${data.balance} coins`;
+    balanceElement.textContent = String(data.balance);
     updateStudyTime(data.total_study_seconds || 0);
 }
 
@@ -317,7 +326,7 @@ async function collectPoints() {
     }
 
     setTimerControlsBusy(true);
-    timerStatusElement.textContent = 'Collecting coins...';
+    timerStatusElement.textContent = 'Collecting drops...';
 
     const { data, error } = await supabase.rpc('collect_study_points');
 
@@ -335,7 +344,7 @@ async function collectPoints() {
 
     if (data?.expired) {
         showNotification(
-            'The timer reached the 12-hour limit. All uncollected time was cancelled and no coins were awarded.',
+            'The timer reached the 12-hour limit. All uncollected time was cancelled and no drops were awarded.',
             'warning'
         );
         return;
@@ -352,7 +361,7 @@ async function collectPoints() {
     const points = Number(data.points) || 0;
 
     if (data.balance !== null && data.balance !== undefined) {
-        balanceElement.textContent = `${data.balance} coins`;
+        balanceElement.textContent = String(data.balance);
     }
 
     if (data.total_study_seconds !== null &&
@@ -365,7 +374,7 @@ async function collectPoints() {
     }
 
     showNotification(
-        `${points} coin${points === 1 ? '' : 's'} collected.`,
+        `${points} drop${points === 1 ? '' : 's'} collected.`,
         'success'
     );
 }
@@ -476,10 +485,9 @@ async function loadShop() {
     shopElement.replaceChildren();
     const user = await getCurrentUser();
     if (!user) return;
-
     const [itemsResult, purchasesResult] = await Promise.all([
         supabase
-    	    .from('shop_items')
+            .from('shop_items')
             .select('id, name, description, price')
             .eq('active', true)
             .or(`user_id.is.null,user_id.eq.${user.id}`)
@@ -489,103 +497,108 @@ async function loadShop() {
             .select('item_id')
             .eq('user_id', user.id)
     ]);
-
-    if (itemsResult.error) {
-        console.error('Could not load shop:', itemsResult.error);
+    if (itemsResult.error || purchasesResult.error) {
+        console.error('Could not load shop:', itemsResult.error || purchasesResult.error);
         shopElement.textContent = 'The shop could not be loaded.';
         return;
     }
-
-    if (purchasesResult.error) {
-        console.error('Could not load purchases:', purchasesResult.error);
-        shopElement.textContent = 'Your purchases could not be loaded.';
-        return;
-    }
-
-    const purchasedIds = new Set(
-        (purchasesResult.data ?? []).map(purchase => purchase.item_id)
-    );
-
+    const purchasedIds = new Set((purchasesResult.data ?? []).map(p => p.item_id));
+    const secrets = new Map();
+    await Promise.all([...purchasedIds].map(async itemId => {
+        const { data, error } = await supabase.rpc('get_secret', { p_item_id: itemId });
+        if (!error) secrets.set(itemId, data ?? 'No content is available.');
+    }));
     const items = itemsResult.data ?? [];
-
-    if (items.length === 0) {
+    if (!items.length) {
         shopElement.textContent = 'No rewards are currently available.';
         return;
     }
-
     for (const item of items) {
-        shopElement.appendChild(createShopItem(item, purchasedIds.has(item.id)));
+        shopElement.appendChild(createShopItem(item, purchasedIds.has(item.id), secrets.get(item.id)));
     }
 }
 
-function createShopItem(item, purchased) {
+function createShopItem(item, purchased, secret) {
     const article = document.createElement('article');
-    article.className = 'shop-item';
+    article.className = `shop-item${purchased ? ' is-unlocked' : ''}`;
 
     const details = document.createElement('div');
     details.className = 'shop-item-details';
-
     const title = document.createElement('h3');
     title.textContent = item.name;
-
     const description = document.createElement('p');
     description.className = 'item-description';
     description.textContent = item.description ?? '';
+    details.append(title, description);
+    article.appendChild(details);
 
-    const price = document.createElement('p');
-    price.className = 'item-price';
-    price.textContent = `${item.price} coins`;
-
-    details.append(title, description, price);
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = purchased ? 'View' : 'Unlock';
-
-    if (purchased) button.classList.add('secondary-button');
-
-    button.addEventListener('click', async () => {
-        button.disabled = true;
-
-        if (purchased) {
-            await viewSecret(item.id);
-        } else {
+    if (purchased) {
+        const secretBox = document.createElement('div');
+        secretBox.className = 'item-secret';
+        appendSecret(secretBox, secret ?? 'No content is available.');
+        article.appendChild(secretBox);
+    } else {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'unlock-button';
+        button.setAttribute('aria-label', `Unlock for ${item.price} drops`);
+        const icon = document.createElement('img');
+        icon.src = document.documentElement.dataset.theme === 'dark' ? DARK_DROP_ICON : LIGHT_DROP_ICON;
+        icon.alt = '';
+        icon.className = 'button-drop-icon';
+        const amount = document.createElement('span');
+        amount.textContent = String(item.price);
+        button.append(icon, amount);
+        button.addEventListener('click', async () => {
+            button.disabled = true;
             await buyItem(item.id);
-        }
-
-        button.disabled = false;
-    });
-
-    article.append(details, button);
+            button.disabled = false;
+        });
+        article.appendChild(button);
+    }
     return article;
 }
 
-async function buyItem(itemId) {
-    const { data, error } = await supabase.rpc('buy_item', {
-        p_item_id: itemId
-    });
+function appendSecret(container, secret) {
+    const value = String(secret);
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    let lastIndex = 0;
+    for (const match of value.matchAll(urlPattern)) {
+        container.append(document.createTextNode(value.slice(lastIndex, match.index)));
+        const link = document.createElement('a');
+        link.href = match[0];
+        link.textContent = match[0];
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        container.appendChild(link);
+        lastIndex = match.index + match[0].length;
+    }
+    container.append(document.createTextNode(value.slice(lastIndex)));
+}
 
+async function buyItem(itemId) {
+    const { error } = await supabase.rpc('buy_item', { p_item_id: itemId });
     if (error) {
         showNotification(error.message, 'error');
         return;
     }
-
-    secretContentElement.textContent = data ?? 'No content is available.';
     await Promise.all([loadBalance(), loadShop()]);
     showNotification('Reward unlocked.', 'success');
 }
 
-async function viewSecret(itemId) {
-    const { data, error } = await supabase.rpc('get_secret', {
-        p_item_id: itemId
+function toggleTheme() {
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+}
+
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('studywell-theme', theme);
+    themeToggleButton.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+    headerDropIcon.src = theme === 'dark' ? DARK_DROP_ICON : LIGHT_DROP_ICON;
+    shopCartIcon.src = theme === 'dark' ? DARK_CART_ICON : LIGHT_CART_ICON;
+    document.querySelectorAll('.button-drop-icon').forEach(img => {
+        img.src = theme === 'dark' ? DARK_DROP_ICON : LIGHT_DROP_ICON;
     });
-
-    if (error) {
-        showNotification(error.message, 'error');
-        return;
-    }
-
-    secretContentElement.textContent = data ?? 'No content is available.';
 }
 
 function showNotification(message, type = 'success') {
@@ -611,23 +624,4 @@ function updateStudyTime(totalSeconds) {
 
     document.getElementById('study-time').textContent =
         `${hours}h ${minutes}m`;
-}
-// Theme switcher added for the redesigned interface.
-const themeToggleButton = document.getElementById('themeToggle');
-const savedTheme = localStorage.getItem('studywell-theme');
-const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-applyTheme(savedTheme || preferredTheme);
-
-themeToggleButton?.addEventListener('click', () => {
-    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(nextTheme);
-    localStorage.setItem('studywell-theme', nextTheme);
-});
-
-function applyTheme(theme) {
-    document.documentElement.dataset.theme = theme;
-    if (!themeToggleButton) return;
-    const dark = theme === 'dark';
-    themeToggleButton.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-    themeToggleButton.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
 }

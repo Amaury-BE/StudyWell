@@ -288,7 +288,7 @@ html[data-theme="dark"] .water-surface-front { background: rgba(18, 112, 196, .3
   position: absolute;
   top: 0;
   bottom: 0;
-  width: clamp(95px, 14vw, 220px);
+  width: clamp(285px, 42vw, 660px);
   min-height: 100dvh;
   background-repeat: repeat-y;
   background-position: center top;
@@ -429,10 +429,13 @@ html[data-theme="dark"] .well-wall-left {
   }
 }
 
-@media (max-width: 400px) {
-  .well-wall {
-    width: 26px;
-  }
+@media (max-width: 700px) {
+    .water-progress {
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center bottom;
+    }
+}
 
   .compact-brand .wordmark {
     display: none;

@@ -26,6 +26,7 @@ const DROP_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/mai
 const CART_LIGHT_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Light.png';
 const CART_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Dark.png';
 const notificationElement = document.getElementById('notification');
+const waterProgressElement = document.getElementById('waterProgress');
 
 let timerState = createEmptyTimerState();
 let timerDisplayInterval = null;
@@ -168,7 +169,7 @@ async function loadBalance() {
 
     const { data, error } = await supabase
         .from('profiles')
-        .select('balance, total_study_seconds')
+        .select('balance, total_study_seconds, study_objective_seconds')
         .eq('id', user.id)
         .single();
 
@@ -180,6 +181,7 @@ async function loadBalance() {
 
     setBalance(data.balance);
     updateStudyTime(data.total_study_seconds || 0);
+    updateWaterProgress(data.total_study_seconds || 0, data.study_objective_seconds);
 }
 
 async function loadTimer(showExpiryMessage = true) {
@@ -361,6 +363,7 @@ async function collectPoints() {
     if (data.total_study_seconds !== null &&
         data.total_study_seconds !== undefined) {
         updateStudyTime(data.total_study_seconds);
+        await loadWaterObjective(data.total_study_seconds);
     }
 
     if (data.balance === null || data.balance === undefined) {
@@ -604,6 +607,10 @@ function setBalance(value) {
     if (valueElement) valueElement.textContent = String(value ?? 0);
 }
 function showNotification(message, type = 'success') {
+    if (type !== 'error') {
+        clearNotification();
+        return;
+    }
     notificationElement.textContent = message;
     notificationElement.className = `notification notification-${type}`;
     notificationElement.hidden = false;
@@ -627,6 +634,37 @@ function updateStudyTime(totalSeconds) {
     document.getElementById('study-time').textContent =
         `${hours}h ${minutes}m`;
 }
+
+async function loadWaterObjective(totalStudySeconds) {
+    const user = await getCurrentUser();
+    if (!user) return;
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('study_objective_seconds')
+        .eq('id', user.id)
+        .single();
+    if (error) {
+        console.error('Could not load study objective:', error);
+        updateWaterProgress(totalStudySeconds, null);
+        return;
+    }
+    updateWaterProgress(totalStudySeconds, data.study_objective_seconds);
+}
+
+function updateWaterProgress(totalStudySeconds, objectiveSeconds) {
+    if (!waterProgressElement) return;
+    const objective = Number(objectiveSeconds);
+    if (!Number.isFinite(objective) || objective <= 0) {
+        waterProgressElement.hidden = true;
+        waterProgressElement.style.removeProperty('--water-level');
+        return;
+    }
+    const studied = Math.max(0, Number(totalStudySeconds) || 0);
+    const percentage = Math.min(100, (studied / objective) * 100);
+    waterProgressElement.hidden = false;
+    waterProgressElement.style.setProperty('--water-level', `${percentage}%`);
+}
+
 // Theme switcher added for the redesigned interface.
 const themeToggleButton = document.getElementById('themeToggle');
 const savedTheme = localStorage.getItem('studywell-theme');

@@ -25,8 +25,6 @@ const DROP_LIGHT_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/ma
 const DROP_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Dark.png';
 const CART_LIGHT_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Light.png';
 const CART_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Dark.png';
-const WALL_LIGHT_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Wall-Light.png';
-const WALL_DARK_URL = 'https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Wall-Dark.png';
 const notificationElement = document.getElementById('notification');
 const waterProgressElement = document.getElementById('waterProgress');
 
@@ -693,13 +691,3 @@ function updateThemeImages(theme) {
     document.querySelectorAll('.theme-drop-icon').forEach(image => image.src = dark ? DROP_DARK_URL : DROP_LIGHT_URL);
     document.querySelectorAll('.theme-cart-icon').forEach(image => image.src = dark ? CART_DARK_URL : CART_LIGHT_URL);
 }
-
-
-// Warm both theme-specific wall assets so switching theme does not flash.
-function preloadWallImages() {
-    [WALL_LIGHT_URL, WALL_DARK_URL].forEach(url => {
-        const image = new Image();
-        image.src = url;
-    });
-}
-preloadWallImages();

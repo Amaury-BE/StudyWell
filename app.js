@@ -1297,12 +1297,8 @@ function renderStatistics(dateRows, period) {
 
   statisticsActiveAverageElement.textContent =
     formatStudyTime(activeAverage);
-
-  const maximumSeconds =
-    Math.max(
-      3600,
-      ...dateRows.map(row => row.seconds)
-    );
+    
+  const maximumSeconds = 12 * 3600;
 
   for (const row of dateRows) {
     const column =

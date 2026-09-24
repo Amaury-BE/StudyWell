@@ -39,6 +39,31 @@
           <img src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/StudyWell-Logo-Light.jpg" alt="Study Well logo">
           <span class="wordmark">Study Well<sup>TM</sup></span>
         </a>
+        <div id="playerStatus" class="player-status" aria-live="polite">
+  <div class="level-line">
+    <span id="levelName">Level 1</span>
+  </div>
+
+  <div
+    id="levelProgress"
+    class="level-progress"
+    role="progressbar"
+    aria-label="Progress to the next level"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="0"
+  >
+    <span id="levelProgressFill"></span>
+  </div>
+
+  <div id="levelProgressText" class="level-progress-text">
+    Loading progress…
+  </div>
+
+  <div id="streakDisplay" class="streak-display" hidden>
+    x2 streak
+  </div>
+</div>
         <div id="balance" class="balance" aria-label="Drop balance">
           <img class="drop-icon theme-drop-icon" src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Drop-Light.png" alt="">
           <span id="balanceValue">0</span>
@@ -56,10 +81,114 @@
         </div>
         <p class="study-total">Total study time: <span id="study-time">0h 0m</span></p>
       </section>
+      <section class="feature-card badges-card" aria-labelledby="badgesTitle">
+  <div class="card-heading">
+    <div>
+      <h2 id="badgesTitle">Badges</h2>
+      <p>Complete achievements to unlock badges.</p>
+    </div>
+
+    <span id="badgeCount" class="badge-count">0 / 0</span>
+  </div>
+
+  <div
+    id="badges"
+    class="badges-grid"
+    aria-live="polite"
+  >
+    <p class="empty-state">Loading badges…</p>
+  </div>
+</section>
       <section class="shop-card" aria-labelledby="shopTitle">
         <h2 id="shopTitle"><img class="cart-icon theme-cart-icon" src="https://raw.githubusercontent.com/Amaury-BE/StudyWell/main/Cart-Light.png" alt=""><span>Shop</span></h2>
         <div id="shop"></div>
       </section>
+      <section
+  class="feature-card statistics-card"
+  aria-labelledby="statisticsTitle"
+>
+  <div class="card-heading statistics-heading">
+    <div>
+      <h2 id="statisticsTitle">Study statistics</h2>
+      <p>Daily collected study time in India Standard Time.</p>
+    </div>
+
+    <div
+      class="statistics-view-switch"
+      role="group"
+      aria-label="Statistics view"
+    >
+      <button
+        id="weekViewButton"
+        class="period-type-button selected"
+        type="button"
+        aria-pressed="true"
+      >
+        Week
+      </button>
+
+      <button
+        id="monthViewButton"
+        class="period-type-button"
+        type="button"
+        aria-pressed="false"
+      >
+        Month
+      </button>
+    </div>
+  </div>
+
+  <div class="period-navigation">
+    <button
+      id="previousPeriodButton"
+      type="button"
+      aria-label="Show previous period"
+    >
+      Previous
+    </button>
+
+    <strong id="statisticsPeriodLabel">Current week</strong>
+
+    <button
+      id="nextPeriodButton"
+      type="button"
+      aria-label="Show next period"
+    >
+      Next
+    </button>
+  </div>
+
+  <div id="statisticsSummary" class="statistics-summary">
+    <div>
+      <span>Total</span>
+      <strong id="statisticsTotal">0h 0m</strong>
+    </div>
+
+    <div>
+      <span>Daily average</span>
+      <strong id="statisticsCalendarAverage">0h 0m</strong>
+    </div>
+
+    <div>
+      <span>Active-day average</span>
+      <strong id="statisticsActiveAverage">0h 0m</strong>
+    </div>
+  </div>
+
+  <div
+    id="statisticsChart"
+    class="statistics-chart"
+    aria-label="Daily study-time chart"
+  >
+    <p class="empty-state">Loading statistics…</p>
+  </div>
+
+  <p id="statisticsAccessibleSummary" class="sr-only"></p>
+
+  <p class="statistics-retention-note">
+    Daily history is retained for the latest three months.
+  </p>
+</section>
       <button id="logoutButton" class="logout-button" type="button">Log out</button>
     </div>
   </main>

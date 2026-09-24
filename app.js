@@ -192,7 +192,9 @@ async function startApp() {
   statisticsView = 'week';
   statisticsAnchorDate = getIndiaToday();
   updateStatisticsViewButtons();
-
+  
+  await updateTimezone();
+    
   await Promise.all([
     loadPlayerProgress(),
     loadShop(),
@@ -1504,6 +1506,21 @@ function formatCompactStudyTime(totalSeconds) {
   }
 
   return `${minutes}m`;
+}
+
+async function updateTimezone() {
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    const timezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    await supabase
+        .from('profiles')
+        .update({
+            timezone
+        })
+        .eq('id', user.id);
 }
 
 // Theme switcher added for the redesigned interface.

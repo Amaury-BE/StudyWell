@@ -967,6 +967,7 @@ async function loadBadges() {
       supabase
         .from('profiles')
         .select(`
+          balance,
           total_study_seconds,
           consecutive_qualified_days,
           longest_streak,
@@ -1011,6 +1012,9 @@ async function loadBadges() {
   const purchaseCount = Number(purchasesResult.count) || 0;
 
   const measures = {
+    balance: 
+      Number(profile.balance) || 0,
+      
     total_study_seconds:
       Number(profile.total_study_seconds) || 0,
 
@@ -1093,8 +1097,9 @@ function createBadgeElement(
   description.textContent = badge.description;
 
   const targetValue = Number(badge.target_value) || 1;
-  const percentage =
-    Math.min(100, (currentValue / targetValue) * 100);
+  const percentage = earned
+    ? 100
+    : Math.min(100, (currentValue / targetValue) * 100);
 
   const progress = document.createElement('div');
   progress.className = 'badge-progress';

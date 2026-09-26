@@ -402,7 +402,7 @@ html[data-theme="dark"] .water-surface-front { background: rgba(18, 112, 196, .3
 /* Level and streak */
 
 .player-status {
-  position: fixed;
+  position: relative;
   top: 18px;
   left: 50%;
   z-index: 9999;

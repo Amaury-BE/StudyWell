@@ -64,10 +64,11 @@ let timerDisplayInterval = null;
 let timerRequestInProgress = false;
 let timerExpiryInProgress = false;
 
-const INDIA_TIME_ZONE = 'Asia/Kolkata';
+let userTimeZone = 
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
 let statisticsView = 'week';
-let statisticsAnchorDate = getIndiaToday();
+let statisticsAnchorDate = null;
 
 function createEmptyTimerState() {
     return {
@@ -186,22 +187,21 @@ async function logout() {
 async function startApp() {
   loginSection.hidden = true;
   appSection.hidden = false;
-
   clearNotification();
 
   statisticsView = 'week';
-  statisticsAnchorDate = getIndiaToday();
-  updateStatisticsViewButtons();
-  
-  await updateTimezone();
     
-  await Promise.all([
+  await updateTimezone();
+
+  statisticsAnchorDate = getUserToday();
+  updateStatisticsViewButtons();
+  await Promise.all(
     loadPlayerProgress(),
     loadShop(),
     loadBadges(),
     loadStatistics()
-  ]);
-
+  );
+    
   await loadTimer();
 }
 
@@ -422,7 +422,7 @@ function renderStreak(streak, lastQualifiedDate) {
 function getVisibleStreak(streak, lastQualifiedDate) {
   if (streak < 2 || !lastQualifiedDate) return 0;
 
-  const today = getIndiaToday();
+  const today = getUserToday();
   const yesterday = addDays(today, -1);
 
   if (
@@ -1159,7 +1159,7 @@ function setStatisticsView(view) {
   if (view !== 'week' && view !== 'month') return;
 
   statisticsView = view;
-  statisticsAnchorDate = getIndiaToday();
+  statisticsAnchorDate = getUserToday();
 
   updateStatisticsViewButtons();
   loadStatistics();
@@ -1222,7 +1222,7 @@ async function loadStatistics() {
     period.label;
 
   nextPeriodButton.disabled =
-    period.end >= getIndiaToday();
+    period.end >= getUserToday();
 
   statisticsChartElement.innerHTML =
     '<p class="empty-state">Loading statistics…</p>';
@@ -1282,7 +1282,7 @@ function renderStatistics(dateRows, period) {
     row => row.seconds > 0
   );
 
-  const today = getIndiaToday();
+  const today = getUserToday();
 
   const completedOrCurrentRows = dateRows.filter(
     row => row.date <= today
@@ -1381,11 +1381,13 @@ function renderStatistics(dateRows, period) {
     `Average on active days ${formatStudyTime(activeAverage)}.`;
 }
 
-function getIndiaToday() {
+function getUserToday() {
+  const safeTimeZone = userTimeZone || 'UTC';
+
   const parts = new Intl.DateTimeFormat(
     'en-CA',
     {
-      timeZone: INDIA_TIME_ZONE,
+      timeZone: safeTimeZone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
@@ -1515,18 +1517,34 @@ function formatCompactStudyTime(totalSeconds) {
 }
 
 async function updateTimezone() {
-    const user = await getCurrentUser();
-    if (!user) return;
+  const user = await getCurrentUser();
 
-    const timezone =
-        Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!user) {
+    userTimeZone = 'UTC';
+    return userTimeZone;
+  }
 
-    await supabase
-        .from('profiles')
-        .update({
-            timezone
-        })
-        .eq('id', user.id);
+  const detectedTimeZone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      timezone: detectedTimeZone
+    })
+    .eq('id', user.id)
+    .select('timezone')
+    .single();
+
+  if (error) {
+    console.error('Could not update timezone:', error);
+    userTimeZone = detectedTimeZone;
+    return userTimeZone;
+  }
+
+  userTimeZone = data?.timezone || detectedTimeZone;
+
+  return userTimeZone;
 }
 
 // Theme switcher added for the redesigned interface.

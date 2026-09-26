@@ -1086,7 +1086,12 @@ function createBadgeElement(
   image.alt = '';
 
   image.addEventListener('error', () => {
-    image.hidden = true;
+    console.error(
+        'Badge image failed',
+        badge.name,
+        badge.image_url
+    );
+    image.style.border = '3px solid red';
   });
 
   const title = document.createElement('h3');

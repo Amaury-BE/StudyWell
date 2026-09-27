@@ -402,16 +402,12 @@ html[data-theme="dark"] .water-surface-front { background: rgba(18, 112, 196, .3
 /* Level and streak */
 
 .player-status {
-  position: relative;
-  top: 18px;
-  left: 50%;
-  z-index: 9999;
   width: min(280px, 34vw);
+  margin: 0 auto 20px;
   padding: 7px 12px;
   border-radius: 12px;
   background: var(--bg);
   text-align: center;
-  transform: translateX(-50%);
 }
 
 .level-line {
@@ -753,8 +749,8 @@ html[data-theme="dark"] .water-surface-front { background: rgba(18, 112, 196, .3
   .logout-button { right: 12px !important; bottom: 12px !important; }
   .theme-toggle { left: 12px; bottom: 12px; }
   .player-status {
-    top: 70px;
     width: min(300px, calc(100vw - 30px));
+    margin: 0 auto 20px;
   }
 
   .level-line {
